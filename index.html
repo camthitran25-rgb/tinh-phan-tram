@@ -13,6 +13,10 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
+<script>
+  // Đọc lựa chọn sáng/tối đã lưu trước khi vẽ trang để khỏi bị chớp màu
+  try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+</script>
 <style>
   :root {
     --bg: #eef6ff;
@@ -21,28 +25,36 @@
     --ink: #1f3a5f;
     --muted: #6b84a3;
     --line: #d3e4f7;
-    --pink: #3d8bfd;
-    --pink-soft: #e2efff;
-    --lilac: #5b6cff;
-    --lilac-soft: #e7e9ff;
-    --mint: #1fb5c9;
-    --mint-soft: #dcf6f9;
-    --peach: #4aa8ff;
-    --peach-soft: #e1f1ff;
-    --sky: #2f6fd6;
-    --sky-soft: #e0eafb;
+    --b1: #3d8bfd; --b1-soft: #e2efff;
+    --b2: #5b6cff; --b2-soft: #e7e9ff;
+    --b3: #1fb5c9; --b3-soft: #dcf6f9;
+    --b4: #4aa8ff; --b4-soft: #e1f1ff;
+    --b5: #2f6fd6; --b5-soft: #e0eafb;
+    --b6: #4f5bd5; --b6-soft: #e6e8fb;
+    --b7: #168aad; --b7-soft: #dcf0f7;
     --up: #1a9b74;
     --down: #e0506f;
     --field: #f7fbff;
     --shadow: 0 6px 18px rgba(61, 139, 253, .14);
+    color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #0f1c2e; --bg2: #0b1626; --card: #172a43; --ink: #e8f1ff; --muted: #9db3cf;
-      --line: #2a4466; --pink-soft: #1d3a63; --lilac-soft: #262e66; --mint-soft: #123f48;
-      --peach-soft: #1a3b5e; --sky-soft: #1b3159; --field: #11223a; --up: #5fe0b4; --down: #ff8fa6;
+      --line: #2a4466; --b1-soft: #1d3a63; --b2-soft: #262e66; --b3-soft: #123f48;
+      --b4-soft: #1a3b5e; --b5-soft: #1b3159; --b6-soft: #252b5c; --b7-soft: #123a4a;
+      --field: #11223a; --up: #5fe0b4; --down: #ff8fa6;
       --shadow: 0 6px 18px rgba(0,0,0,.35);
+      color-scheme: dark;
     }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1c2e; --bg2: #0b1626; --card: #172a43; --ink: #e8f1ff; --muted: #9db3cf;
+    --line: #2a4466; --b1-soft: #1d3a63; --b2-soft: #262e66; --b3-soft: #123f48;
+    --b4-soft: #1a3b5e; --b5-soft: #1b3159; --b6-soft: #252b5c; --b7-soft: #123a4a;
+    --field: #11223a; --up: #5fe0b4; --down: #ff8fa6;
+    --shadow: 0 6px 18px rgba(0,0,0,.35);
+    color-scheme: dark;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; }
@@ -60,8 +72,17 @@
   header svg { width: 74px; height: 74px; flex: none; animation: bob 3s ease-in-out infinite; }
   @keyframes bob { 50% { transform: translateY(-4px) rotate(-2deg); } }
   @media (prefers-reduced-motion: reduce) { header svg { animation: none; } }
+  header .title { flex: 1; min-width: 0; }
   h1 { font-size: 24px; margin: 0; letter-spacing: -.3px; }
   .sub { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+  .theme-btn {
+    flex: none; align-self: flex-start; margin-top: 4px; border: 0; background: var(--card); color: var(--ink);
+    border-radius: 50%; width: 40px; height: 40px; padding: 0;
+    box-shadow: var(--shadow); cursor: pointer; display: grid; place-items: center;
+  }
+  .theme-btn svg { width: 20px; height: 20px; animation: none; }
+  .theme-btn span { display: none; }
+  h1 { font-size: 23px; }
 
   .chips { display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px 12px; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
@@ -69,6 +90,14 @@
     flex: none; border: 0; border-radius: 999px; padding: 9px 14px; font: inherit; font-size: 14px;
     font-weight: 700; color: var(--ink); background: var(--card); box-shadow: var(--shadow); cursor: pointer;
   }
+
+  .settings {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    background: var(--card); border-radius: 18px; padding: 10px 12px 10px 16px; margin: 0 0 16px; box-shadow: var(--shadow);
+    --accent: var(--b1);
+  }
+  .settings .lbl { font-weight: 700; font-size: 14.5px; }
+  .settings .lbl small { display: block; font-weight: 600; color: var(--muted); font-size: 12.5px; }
 
   .card {
     background: var(--card); border-radius: 22px; padding: 16px 16px 14px; margin: 0 0 16px;
@@ -79,30 +108,40 @@
     display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
     background: var(--soft); color: var(--ink); font-size: 14px; flex: none;
   }
+  .card h2 .new {
+    font-size: 11px; font-weight: 800; background: var(--accent); color: #fff; border-radius: 999px; padding: 2px 8px;
+  }
   .hint { margin: 0 0 12px; color: var(--muted); font-size: 13.5px; }
 
   .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 16px; }
   .row .w { color: var(--muted); font-weight: 700; font-size: 14.5px; flex: 1 1 100%; padding-left: 4px; margin: -2px 0; }
+  .row .w small { font-weight: 600; opacity: .85; }
+  [hidden] { display: none !important; }
   .field { position: relative; flex: 1 1 100%; min-width: 0; }
   .field.half { flex: 1 1 100px; }
+  .field.third { flex: 1 1 70px; }
+  .field.third input { padding-right: 26px; }
+  .field.third .unit { right: 9px; }
   .field input {
     width: 100%; font: inherit; font-size: 20px; font-weight: 700; color: var(--ink);
     background: var(--field); border: 2px solid var(--line); border-radius: 14px;
     padding: 11px 34px 11px 12px; outline: none; transition: border-color .15s;
   }
   .field input:focus { border-color: var(--accent); }
-  .field.pct input { padding-right: 34px; }
   .field .unit {
     position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
     color: var(--muted); font-weight: 800; pointer-events: none;
   }
 
-  .seg { display: inline-flex; background: var(--field); border: 2px solid var(--line); border-radius: 14px; padding: 3px; }
+  .seg { display: inline-flex; background: var(--field); border: 2px solid var(--line); border-radius: 14px; padding: 3px; max-width: 100%; }
+  .seg.full { display: flex; width: 100%; margin-bottom: 10px; }
+  .seg.full button { flex: 1; }
   .seg button {
-    border: 0; background: transparent; font: inherit; font-weight: 700; font-size: 15px; color: var(--muted);
-    padding: 8px 14px; border-radius: 10px; cursor: pointer;
+    border: 0; background: transparent; font: inherit; font-weight: 700; font-size: 14.5px; color: var(--muted);
+    padding: 8px 12px; border-radius: 10px; cursor: pointer; line-height: 1.2;
   }
   .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .sublabel { font-size: 13px; color: var(--muted); font-weight: 700; margin: 2px 0 6px 4px; }
 
   .result {
     margin-top: 12px; background: var(--soft); border-radius: 16px; padding: 12px 14px;
@@ -113,21 +152,24 @@
   .result .big.up { color: var(--up); }
   .result .big.down { color: var(--down); }
   .result .how { font-size: 13.5px; color: var(--muted); margin-top: 3px; word-break: break-word; }
+  .result .note { font-size: 13.5px; color: var(--ink); margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); word-break: break-word; }
+  .result .note:empty { display: none; }
   .result .empty { color: var(--muted); font-size: 14.5px; }
   .icon-btn {
     flex: none; border: 0; background: var(--card); color: var(--ink); border-radius: 12px;
     width: 42px; height: 42px; display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow);
   }
   .icon-btn svg { width: 20px; height: 20px; }
-  .icon-btn[hidden] { display: none; }
   .actions { display: flex; justify-content: flex-end; margin-top: 8px; }
   .clear { border: 0; background: none; color: var(--muted); font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; padding: 4px 6px; }
 
-  .c1 { --accent: var(--pink); --soft: var(--pink-soft); }
-  .c2 { --accent: var(--lilac); --soft: var(--lilac-soft); }
-  .c3 { --accent: var(--mint); --soft: var(--mint-soft); }
-  .c4 { --accent: var(--peach); --soft: var(--peach-soft); }
-  .c5 { --accent: var(--sky); --soft: var(--sky-soft); }
+  .c1 { --accent: var(--b1); --soft: var(--b1-soft); }
+  .c2 { --accent: var(--b2); --soft: var(--b2-soft); }
+  .c3 { --accent: var(--b3); --soft: var(--b3-soft); }
+  .c4 { --accent: var(--b4); --soft: var(--b4-soft); }
+  .c5 { --accent: var(--b5); --soft: var(--b5-soft); }
+  .c6 { --accent: var(--b6); --soft: var(--b6-soft); }
+  .c7 { --accent: var(--b7); --soft: var(--b7-soft); }
 
   .tip { background: var(--card); border-radius: 22px; padding: 14px 16px; box-shadow: var(--shadow); font-size: 14px; color: var(--muted); }
   .tip b { color: var(--ink); }
@@ -162,13 +204,16 @@
       <circle cx="94" cy="96" r="17" fill="#3d8bfd" stroke="#fff" stroke-width="3"/>
       <text x="94" y="103" text-anchor="middle" font-size="20" font-weight="800" fill="#fff" font-family="Arial, sans-serif">%</text>
     </svg>
-    <div>
+    <div class="title">
       <h1>Tính Phần Trăm</h1>
       <p class="sub">Gõ số vào là ra kết quả liền ✨</p>
     </div>
+    <button class="theme-btn" type="button" aria-label="Đổi nền sáng hoặc tối"></button>
   </header>
 
   <nav class="chips" aria-label="Chọn kiểu tính">
+    <button class="chip" data-go="k6">Giá bán &amp; % lời</button>
+    <button class="chip" data-go="k7">Giảm giá</button>
     <button class="chip" data-go="k1">% của số</button>
     <button class="chip" data-go="k2">A là bao nhiêu % B</button>
     <button class="chip" data-go="k3">Tăng/giảm bao nhiêu %</button>
@@ -176,12 +221,21 @@
     <button class="chip" data-go="k5">Tìm số gốc</button>
   </nav>
 
+  <div class="settings">
+    <div class="lbl">Làm tròn tiền<small>Áp dụng cho kết quả là số tiền</small></div>
+    <div class="seg" role="group" aria-label="Làm tròn tiền">
+      <button data-round="0" aria-pressed="true">Không</button>
+      <button data-round="100" aria-pressed="false">Trăm đ</button>
+      <button data-round="1000" aria-pressed="false">Nghìn đ</button>
+    </div>
+  </div>
+
   <!-- 1 -->
   <section class="card c1" id="k1">
     <h2><span class="no">1</span>Tính phần trăm của một số</h2>
     <p class="hint">Ví dụ: 20% của 80.000 là bao nhiêu?</p>
     <div class="row">
-      <div class="field pct"><input data-k="1" data-i="a" inputmode="decimal" placeholder="20" aria-label="Phần trăm"><span class="unit">%</span></div>
+      <div class="field"><input data-k="1" data-i="a" inputmode="decimal" placeholder="20" aria-label="Phần trăm"><span class="unit">%</span></div>
       <span class="w">của</span>
       <div class="field"><input data-k="1" data-i="b" inputmode="decimal" placeholder="80.000" aria-label="Số"></div>
     </div>
@@ -223,10 +277,10 @@
     <div class="row">
       <div class="field"><input data-k="4" data-i="b" inputmode="decimal" placeholder="80.000" aria-label="Số"></div>
       <div class="seg" role="group" aria-label="Tăng hay giảm">
-        <button data-dir="up" aria-pressed="true">Tăng</button>
-        <button data-dir="down" aria-pressed="false">Giảm</button>
+        <button data-k="4" data-key="dir" data-v="up" aria-pressed="true">Tăng</button>
+        <button data-k="4" data-key="dir" data-v="down" aria-pressed="false">Giảm</button>
       </div>
-      <div class="field pct half"><input data-k="4" data-i="a" inputmode="decimal" placeholder="10" aria-label="Phần trăm"><span class="unit">%</span></div>
+      <div class="field half"><input data-k="4" data-i="a" inputmode="decimal" placeholder="10" aria-label="Phần trăm"><span class="unit">%</span></div>
     </div>
     <div class="result" data-r="4"></div>
     <div class="actions"><button class="clear" data-clear="4">Xóa số</button></div>
@@ -239,16 +293,69 @@
     <div class="row">
       <div class="field"><input data-k="5" data-i="a" inputmode="decimal" placeholder="10" aria-label="Số đã biết"></div>
       <span class="w">là</span>
-      <div class="field pct"><input data-k="5" data-i="b" inputmode="decimal" placeholder="5" aria-label="Phần trăm"><span class="unit">%</span></div>
+      <div class="field"><input data-k="5" data-i="b" inputmode="decimal" placeholder="5" aria-label="Phần trăm"><span class="unit">%</span></div>
       <span class="w">của số nào?</span>
     </div>
     <div class="result" data-r="5"></div>
     <div class="actions"><button class="clear" data-clear="5">Xóa số</button></div>
   </section>
 
+  <!-- 6 -->
+  <section class="card c6" id="k6">
+    <h2><span class="no">6</span>Giá bán &amp; % lời <span class="new">MỚI</span></h2>
+    <p class="hint">Ví dụ: vốn 30.000, muốn lời 25% thì bán bao nhiêu?</p>
+    <div class="seg full" role="group" aria-label="Muốn tìm gì">
+      <button data-k="6" data-key="mode" data-v="price" aria-pressed="true">Tìm giá bán</button>
+      <button data-k="6" data-key="mode" data-v="pct" aria-pressed="false">Tìm % lời</button>
+    </div>
+    <div class="sublabel">Tính % lời dựa trên:</div>
+    <div class="seg full" role="group" aria-label="Tính phần trăm lời dựa trên">
+      <button data-k="6" data-key="basis" data-v="cost" aria-pressed="true">Giá vốn</button>
+      <button data-k="6" data-key="basis" data-v="sell" aria-pressed="false">Giá bán</button>
+    </div>
+    <div class="row">
+      <span class="w">Giá vốn</span>
+      <div class="field"><input data-k="6" data-i="cost" inputmode="decimal" placeholder="30.000" aria-label="Giá vốn"></div>
+      <span class="w" data-show="6:price">Muốn lời</span>
+      <div class="field" data-show="6:price"><input data-k="6" data-i="pct" inputmode="decimal" placeholder="25" aria-label="Phần trăm lời"><span class="unit">%</span></div>
+      <span class="w" data-show="6:pct" hidden>Giá bán</span>
+      <div class="field" data-show="6:pct" hidden><input data-k="6" data-i="sell" inputmode="decimal" placeholder="40.000" aria-label="Giá bán"></div>
+    </div>
+    <div class="result" data-r="6"></div>
+    <div class="actions"><button class="clear" data-clear="6">Xóa số</button></div>
+  </section>
+
+  <!-- 7 -->
+  <section class="card c7" id="k7">
+    <h2><span class="no">7</span>Giảm giá <span class="new">MỚI</span></h2>
+    <p class="hint" data-show="7:multi">Ví dụ: giảm 10% rồi giảm thêm 5% thì tổng giảm bao nhiêu?</p>
+    <p class="hint" data-show="7:orig" hidden>Ví dụ: sau khi giảm 20% còn 48.000, vậy giá gốc là bao nhiêu?</p>
+    <div class="seg full" role="group" aria-label="Muốn tìm gì">
+      <button data-k="7" data-key="mode" data-v="multi" aria-pressed="true">Giảm nhiều lần</button>
+      <button data-k="7" data-key="mode" data-v="orig" aria-pressed="false">Tìm giá gốc</button>
+    </div>
+    <div class="row" data-show="7:multi">
+      <span class="w">Giá ban đầu <small>(không bắt buộc)</small></span>
+      <div class="field"><input data-k="7" data-i="price" data-opt inputmode="decimal" placeholder="100.000" aria-label="Giá ban đầu"></div>
+      <span class="w">Giảm lần 1, lần 2, lần 3 <small>(lần 3 không bắt buộc)</small></span>
+      <div class="field third"><input data-k="7" data-i="p1" inputmode="decimal" placeholder="10" aria-label="Phần trăm giảm lần 1"><span class="unit">%</span></div>
+      <div class="field third"><input data-k="7" data-i="p2" inputmode="decimal" placeholder="5" aria-label="Phần trăm giảm lần 2"><span class="unit">%</span></div>
+      <div class="field third"><input data-k="7" data-i="p3" data-opt inputmode="decimal" placeholder="—" aria-label="Phần trăm giảm lần 3, không bắt buộc"><span class="unit">%</span></div>
+    </div>
+    <div class="row" data-show="7:orig" hidden>
+      <span class="w">Giá sau khi giảm</span>
+      <div class="field"><input data-k="7" data-i="after" inputmode="decimal" placeholder="48.000" aria-label="Giá sau khi giảm"></div>
+      <span class="w">Đã giảm</span>
+      <div class="field"><input data-k="7" data-i="off" inputmode="decimal" placeholder="20" aria-label="Phần trăm đã giảm"><span class="unit">%</span></div>
+    </div>
+    <div class="result" data-r="7"></div>
+    <div class="actions"><button class="clear" data-clear="7">Xóa số</button></div>
+  </section>
+
   <div class="tip">
     <p><b>Mẹo nhỏ:</b> dấu chấm ngăn hàng nghìn sẽ tự hiện khi gõ (80.000). Muốn gõ số lẻ thì dùng dấu phẩy, ví dụ 2,5.</p>
     <p>Bấm nút <b>chép</b> cạnh kết quả để dán số sang Zalo, Excel hay chỗ khác.</p>
+    <p><b>Lời trên giá vốn hay giá bán?</b> Vốn 30.000, bán 40.000: lời 10.000. So với vốn là lời 33,33%, so với giá bán là lời 25%. Hai cách đều đúng, chỉ khác cách so.</p>
   </div>
 </div>
 
@@ -257,6 +364,10 @@
 <script>
 (function () {
   "use strict";
+
+  function store(key, value) {
+    try { if (value === undefined) return localStorage.getItem(key); localStorage.setItem(key, value); } catch (e) { return null; }
+  }
 
   // ----- đọc & định dạng số kiểu Việt Nam (1.234.567,89) -----
   function parseVN(str) {
@@ -274,16 +385,23 @@
     return r.toLocaleString("vi-VN", { maximumFractionDigits: digits });
   }
 
+  // ----- làm tròn tiền -----
+  var roundUnit = Number(store("round")) || 0;
+  function money(n) { return roundUnit ? Math.round(n / roundUnit) * roundUnit : n; }
+  // trả về phần chữ "→ làm tròn ..." nếu có làm tròn
+  function roundNote(n) {
+    var r = money(n);
+    return r !== n && fmt(r) !== fmt(n) ? " → làm tròn: " + fmt(r) : "";
+  }
+
   // Tự chèn dấu chấm hàng nghìn khi gõ, giữ vị trí con trỏ
   function liveFormat(input) {
     var raw = input.value;
     var caret = input.selectionStart == null ? raw.length : input.selectionStart;
-    // Bàn phím có thể cho dấu "." làm dấu lẻ: nếu vừa gõ "." ở cuối thì đổi thành ","
     if (raw.length && raw.charAt(caret - 1) === "." && caret === raw.length && raw.indexOf(",") === -1) {
       var before = raw.slice(0, caret - 1).replace(/\./g, "");
       if (/^-?\d+$/.test(before)) raw = raw.slice(0, caret - 1) + ",";
     }
-    // đếm số "ký tự có nghĩa" trước con trỏ
     var sig = raw.slice(0, caret).replace(/[^\d,\-]/g, "").length;
     var neg = raw.trim().charAt(0) === "-";
     var clean = raw.replace(/[^\d,]/g, "");
@@ -295,7 +413,6 @@
     var out = (neg ? "-" : "") + grouped + (decPart !== null ? "," + decPart : "");
     if (out === input.value) return;
     input.value = out;
-    // đặt lại con trỏ
     var pos = 0, count = 0;
     while (pos < out.length && count < sig) {
       if (/[\d,\-]/.test(out.charAt(pos))) count++;
@@ -304,74 +421,155 @@
     try { input.setSelectionRange(pos, pos); } catch (e) {}
   }
 
+  // ----- lựa chọn trong từng ô -----
+  var st = { 4: { dir: "up" }, 6: { mode: "price", basis: "cost" }, 7: { mode: "multi" } };
+
   // ----- các phép tính -----
-  var dir4 = "up";
+  // Mỗi phép trả về: big (kết quả lớn), how (cách tính), note (ghi chú thêm), copy (số để chép)
   var calc = {
-    1: function (a, b) {
-      var r = a * b / 100;
-      return { val: r, big: fmt(r), how: fmt(a) + " × " + fmt(b) + " ÷ 100 = " + fmt(r) };
+    1: function (v) {
+      var r = v.a * v.b / 100, m = money(r);
+      return { big: fmt(m), copy: m, how: fmt(v.a) + "% × " + fmt(v.b) + " = " + fmt(v.b) + " × " + fmt(v.a) + " ÷ 100 = " + fmt(r) + roundNote(r) };
     },
-    2: function (a, b) {
-      if (b === 0) return { err: "Số B phải khác 0 mới tính được." };
-      var r = a / b * 100;
-      return { val: r, big: fmt(r) + "%", how: fmt(a) + " ÷ " + fmt(b) + " × 100 = " + fmt(r) + "%" };
+    2: function (v) {
+      if (v.b === 0) return { err: "Số B phải khác 0 mới tính được." };
+      var r = v.a / v.b * 100;
+      return { big: fmt(r) + "%", copy: r, how: fmt(v.a) + " ÷ " + fmt(v.b) + " × 100 = " + fmt(r) + "%" };
     },
-    3: function (a, b) {
+    3: function (v) {
+      var a = v.a, b = v.b;
       if (a === 0) return { err: "Số cũ bằng 0 nên không tính được phần trăm thay đổi." };
-      var diff = b - a;
-      var r = diff / Math.abs(a) * 100;
+      var diff = b - a, r = diff / Math.abs(a) * 100;
       var how = "(" + fmt(b) + " − " + fmt(a) + ") ÷ " + fmt(Math.abs(a)) + " × 100 = " + fmt(r) + "%";
-      if (fmt(r) === "0") return { val: 0, big: "Không đổi", how: how };
+      if (fmt(r) === "0") return { big: "Không đổi", copy: 0, how: how };
       var up = r > 0;
       return {
-        val: Math.abs(r), cls: up ? "up" : "down",
+        cls: up ? "up" : "down", copy: Math.abs(r),
         big: (up ? "Tăng " : "Giảm ") + fmt(Math.abs(r)) + "%",
-        how: how + " · chênh " + (up ? "+" : "−") + fmt(Math.abs(diff))
+        how: how, note: "Chênh lệch: " + (up ? "+" : "−") + fmt(Math.abs(diff))
       };
     },
-    4: function (a, b) {
-      var part = b * a / 100;
-      var r = dir4 === "up" ? b + part : b - part;
-      var sign = dir4 === "up" ? " + " : " − ";
+    4: function (v) {
+      var up = st[4].dir === "up";
+      var part = v.b * v.a / 100, r = up ? v.b + part : v.b - part, m = money(r);
+      var sign = up ? " + " : " − ";
       return {
-        val: r, big: fmt(r),
-        how: fmt(b) + sign + fmt(b) + " × " + fmt(a) + "% = " + fmt(b) + sign + fmt(part) + " = " + fmt(r)
+        big: fmt(m), copy: m,
+        how: fmt(v.b) + sign + fmt(v.a) + "% = " + fmt(v.b) + sign + fmt(part) + " = " + fmt(r) + roundNote(r)
       };
     },
-    5: function (a, b) {
-      if (b === 0) return { err: "Phần trăm phải khác 0 mới tính được." };
-      var r = a * 100 / b;
-      return { val: r, big: fmt(r), how: fmt(a) + " × 100 ÷ " + fmt(b) + " = " + fmt(r) };
+    5: function (v) {
+      if (v.b === 0) return { err: "Phần trăm phải khác 0 mới tính được." };
+      var r = v.a * 100 / v.b, m = money(r);
+      return { big: fmt(m), copy: m, how: fmt(v.a) + " × 100 ÷ " + fmt(v.b) + " = " + fmt(r) + roundNote(r) };
+    },
+    6: function (v) {
+      var onCost = st[6].basis === "cost";
+      if (st[6].mode === "price") {
+        var c = v.cost, p = v.pct, price, how;
+        if (onCost) {
+          price = c * (1 + p / 100);
+          how = "Lời trên giá vốn: " + fmt(c) + " + " + fmt(c) + " × " + fmt(p) + "% = " + fmt(price);
+        } else {
+          if (p >= 100) return { err: "Lời tính trên giá bán phải nhỏ hơn 100%." };
+          price = c / (1 - p / 100);
+          how = "Lời trên giá bán: " + fmt(c) + " ÷ (100% − " + fmt(p) + "%) = " + fmt(price);
+        }
+        var m = money(price), profit = m - c;
+        var other = m !== 0 && c !== 0
+          ? (onCost ? "Nếu so với giá bán thì là lời " + fmt(profit / m * 100) + "%."
+                    : "Nếu so với giá vốn thì là lời " + fmt(profit / c * 100) + "%.")
+          : "";
+        return {
+          big: "Bán " + fmt(m), copy: m, how: how + roundNote(price),
+          note: "Mỗi sản phẩm lời " + fmt(profit) + ". " + other
+        };
+      }
+      var cost = v.cost, sell = v.sell;
+      var base = onCost ? cost : sell;
+      if (base === 0) return { err: onCost ? "Giá vốn phải khác 0." : "Giá bán phải khác 0." };
+      var gain = sell - cost, r = gain / base * 100;
+      var how2 = "(" + fmt(sell) + " − " + fmt(cost) + ") ÷ " + fmt(base) + " × 100 = " + fmt(r) + "%";
+      var otherBase = onCost ? sell : cost;
+      var otherTxt = otherBase !== 0
+        ? (onCost ? "Nếu so với giá bán thì là " : "Nếu so với giá vốn thì là ") + fmt(Math.abs(gain) / otherBase * 100) + "%."
+        : "";
+      if (fmt(gain) === "0") return { big: "Hòa vốn", copy: 0, how: how2 };
+      var lai = gain > 0;
+      return {
+        cls: lai ? "up" : "down", copy: Math.abs(r),
+        big: (lai ? "Lời " : "Lỗ ") + fmt(Math.abs(r)) + "%",
+        how: how2,
+        note: (lai ? "Lời " : "Lỗ ") + fmt(Math.abs(gain)) + " mỗi sản phẩm. " + otherTxt
+      };
+    },
+    7: function (v) {
+      if (st[7].mode === "orig") {
+        if (v.off >= 100) return { err: "Phần trăm đã giảm phải nhỏ hơn 100%." };
+        var orig = v.after / (1 - v.off / 100), m = money(orig);
+        return {
+          big: "Giá gốc " + fmt(m), copy: m,
+          how: fmt(v.after) + " ÷ (100% − " + fmt(v.off) + "%) = " + fmt(orig) + roundNote(orig),
+          note: "Đã bớt " + fmt(m - v.after) + " so với giá gốc."
+        };
+      }
+      var ps = [v.p1, v.p2];
+      if (!isNaN(v.p3)) ps.push(v.p3);
+      var keep = 1, parts = [];
+      ps.forEach(function (p) { keep *= (1 - p / 100); parts.push("(100% − " + fmt(p) + "%)"); });
+      var total = (1 - keep) * 100;
+      var sum = ps.reduce(function (s, p) { return s + p; }, 0);
+      var note = "";
+      if (!isNaN(v.price)) {
+        var fin = v.price * keep, mf = money(fin);
+        note = "Giá " + fmt(v.price) + " còn " + fmt(mf) + " (bớt " + fmt(v.price - mf) + "). ";
+      }
+      if (fmt(sum) !== fmt(total)) note += "Không phải cộng dồn " + fmt(sum) + "%, vì lần sau giảm trên giá đã giảm.";
+      return {
+        big: "Tổng giảm " + fmt(total) + "%", copy: total,
+        how: "Còn lại: " + parts.join(" × ") + " = " + fmt(keep * 100) + "% → giảm " + fmt(total) + "%",
+        note: note
+      };
     }
   };
 
   var copyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="3"/><path d="M5 15V6a3 3 0 0 1 3-3h9"/></svg>';
 
-  function val(k, i) {
-    var el = document.querySelector('input[data-k="' + k + '"][data-i="' + i + '"]');
-    return parseVN(el.value);
+  function isShown(el, card) {
+    for (var n = el; n && n !== card; n = n.parentElement) if (n.hidden) return false;
+    return true;
   }
 
   function render(k) {
-    var box = document.querySelector('[data-r="' + k + '"]');
-    var a = val(k, "a"), b = val(k, "b");
-    if (isNaN(a) || isNaN(b)) {
-      box.innerHTML = '<div class="txt"><div class="empty">Nhập đủ hai ô để xem kết quả 🐱</div></div>';
+    var card = document.getElementById("k" + k);
+    var box = card.querySelector('[data-r="' + k + '"]');
+    var v = {}, missing = false;
+    card.querySelectorAll("input[data-i]").forEach(function (inp) {
+      if (!isShown(inp, card)) return;
+      var n = parseVN(inp.value);
+      v[inp.dataset.i] = n;
+      if (isNaN(n) && !inp.hasAttribute("data-opt")) missing = true;
+    });
+    if (missing) {
+      box.innerHTML = '<div class="txt"><div class="empty">Nhập đủ các ô để xem kết quả 🐱</div></div>';
       return;
     }
-    var res = calc[k](a, b);
+    var res = calc[k](v);
     if (res.err) {
-      box.innerHTML = '<div class="txt"><div class="empty">' + res.err + '</div></div>';
+      box.innerHTML = '<div class="txt"><div class="empty"></div></div>';
+      box.querySelector(".empty").textContent = res.err;
       return;
     }
     box.innerHTML =
-      '<div class="txt"><div class="big ' + (res.cls || "") + '"></div><div class="how"></div></div>' +
+      '<div class="txt"><div class="big ' + (res.cls || "") + '"></div><div class="how"></div><div class="note"></div></div>' +
       '<button class="icon-btn" aria-label="Chép kết quả">' + copyIcon + '</button>';
     box.querySelector(".big").textContent = res.big;
     box.querySelector(".how").textContent = res.how;
-    var copyText = fmt(res.val);
+    box.querySelector(".note").textContent = (res.note || "").trim();
+    var copyText = fmt(res.copy);
     box.querySelector(".icon-btn").addEventListener("click", function () { copy(copyText); });
   }
+  function renderAll() { for (var k = 1; k <= 7; k++) render(k); }
 
   // ----- chép kết quả -----
   var toastEl = document.querySelector(".toast"), toastTimer;
@@ -406,13 +604,43 @@
       render(k);
     });
   });
-  document.querySelectorAll("[data-dir]").forEach(function (btn) {
+
+  // các nút chọn (Tăng/Giảm, Tìm giá bán/Tìm % lời, ...)
+  function applyShow(k) {
+    var card = document.getElementById("k" + k);
+    card.querySelectorAll("[data-show]").forEach(function (el) {
+      el.hidden = el.dataset.show !== k + ":" + st[k].mode;
+    });
+  }
+  document.querySelectorAll("button[data-key]").forEach(function (btn) {
     btn.addEventListener("click", function () {
-      dir4 = btn.dataset.dir;
-      document.querySelectorAll("[data-dir]").forEach(function (b) { b.setAttribute("aria-pressed", String(b === btn)); });
-      render(4);
+      var k = btn.dataset.k, key = btn.dataset.key;
+      st[k][key] = btn.dataset.v;
+      document.querySelectorAll('button[data-k="' + k + '"][data-key="' + key + '"]').forEach(function (b) {
+        b.setAttribute("aria-pressed", String(b === btn));
+      });
+      if (key === "mode") applyShow(k);
+      render(k);
     });
   });
+
+  // làm tròn tiền
+  function setRound(u) {
+    roundUnit = u;
+    document.querySelectorAll("[data-round]").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(Number(b.dataset.round) === u));
+    });
+  }
+  document.querySelectorAll("[data-round]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      setRound(Number(btn.dataset.round));
+      store("round", String(roundUnit));
+      renderAll();
+    });
+  });
+  setRound(roundUnit);
+
+  // nhảy tới ô tính
   document.querySelectorAll("[data-go]").forEach(function (chip) {
     chip.addEventListener("click", function () {
       var card = document.getElementById(chip.dataset.go);
@@ -421,7 +649,36 @@
       setTimeout(function () { first.focus({ preventScroll: true }); }, 350);
     });
   });
-  [1, 2, 3, 4, 5].forEach(render);
+
+  // ----- nút sáng / tối -----
+  var themes = ["auto", "light", "dark"];
+  var themeLabel = { auto: "Tự động", light: "Sáng", dark: "Tối" };
+  var themeIcon = {
+    auto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>',
+    light: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+    dark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>'
+  };
+  var themeBtn = document.querySelector(".theme-btn");
+  var theme = store("theme");
+  if (themes.indexOf(theme) === -1) theme = "auto";
+  function applyTheme() {
+    if (theme === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", theme);
+    themeBtn.innerHTML = themeIcon[theme] + "<span>" + themeLabel[theme] + "</span>";
+    themeBtn.setAttribute("aria-label", "Nền đang là: " + themeLabel[theme] + ". Bấm để đổi");
+    var dark = theme === "dark" || (theme === "auto" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+    document.querySelector('meta[name="theme-color"]').setAttribute("content", dark ? "#0f1c2e" : "#dcecff");
+  }
+  themeBtn.addEventListener("click", function () {
+    theme = themes[(themes.indexOf(theme) + 1) % themes.length];
+    store("theme", theme);
+    applyTheme();
+    toast("Nền: " + themeLabel[theme]);
+  });
+  applyTheme();
+
+  applyShow(6); applyShow(7);
+  renderAll();
 
   // ----- cho phép dùng khi không có mạng -----
   if ("serviceWorker" in navigator && location.protocol === "https:") {

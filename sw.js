@@ -1,6 +1,6 @@
 // Lưu sẵn app vào máy để mở được khi không có mạng.
 // Mỗi lần sửa app, tăng số phiên bản bên dưới để điện thoại tải bản mới.
-var CACHE = "phan-tram-v1";
+var CACHE = "phan-tram-v2";
 var FILES = ["./", "index.html", "manifest.json", "icon-180.png", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", function (e) {
