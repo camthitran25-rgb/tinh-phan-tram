@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tính Phần Trăm</title>
+<meta name="description" content="Máy tính phần trăm nhỏ gọn, dùng được cả khi không có mạng.">
+<meta name="theme-color" content="#dcecff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Phần Trăm">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --bg: #eef6ff;
+    --bg2: #dcecff;
+    --card: #ffffff;
+    --ink: #1f3a5f;
+    --muted: #6b84a3;
+    --line: #d3e4f7;
+    --pink: #3d8bfd;
+    --pink-soft: #e2efff;
+    --lilac: #5b6cff;
+    --lilac-soft: #e7e9ff;
+    --mint: #1fb5c9;
+    --mint-soft: #dcf6f9;
+    --peach: #4aa8ff;
+    --peach-soft: #e1f1ff;
+    --sky: #2f6fd6;
+    --sky-soft: #e0eafb;
+    --up: #1a9b74;
+    --down: #e0506f;
+    --field: #f7fbff;
+    --shadow: 0 6px 18px rgba(61, 139, 253, .14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1c2e; --bg2: #0b1626; --card: #172a43; --ink: #e8f1ff; --muted: #9db3cf;
+      --line: #2a4466; --pink-soft: #1d3a63; --lilac-soft: #262e66; --mint-soft: #123f48;
+      --peach-soft: #1a3b5e; --sky-soft: #1b3159; --field: #11223a; --up: #5fe0b4; --down: #ff8fa6;
+      --shadow: 0 6px 18px rgba(0,0,0,.35);
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    font-family: -apple-system, "SF Pro Rounded", "Nunito", "Segoe UI", system-ui, sans-serif;
+    color: var(--ink);
+    background: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%) fixed;
+    background-color: var(--bg);
+    min-height: 100vh;
+    padding: env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  .wrap { max-width: 520px; margin: 0 auto; }
+
+  header { display: flex; align-items: center; gap: 12px; padding: 18px 2px 10px; }
+  header svg { width: 74px; height: 74px; flex: none; animation: bob 3s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-4px) rotate(-2deg); } }
+  @media (prefers-reduced-motion: reduce) { header svg { animation: none; } }
+  h1 { font-size: 24px; margin: 0; letter-spacing: -.3px; }
+  .sub { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px 12px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none; border: 0; border-radius: 999px; padding: 9px 14px; font: inherit; font-size: 14px;
+    font-weight: 700; color: var(--ink); background: var(--card); box-shadow: var(--shadow); cursor: pointer;
+  }
+
+  .card {
+    background: var(--card); border-radius: 22px; padding: 16px 16px 14px; margin: 0 0 16px;
+    box-shadow: var(--shadow); border-top: 6px solid var(--accent); scroll-margin-top: 12px;
+  }
+  .card h2 { font-size: 17px; margin: 0 0 2px; display: flex; align-items: center; gap: 8px; }
+  .card h2 .no {
+    display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--soft); color: var(--ink); font-size: 14px; flex: none;
+  }
+  .hint { margin: 0 0 12px; color: var(--muted); font-size: 13.5px; }
+
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 16px; }
+  .row .w { color: var(--muted); font-weight: 700; font-size: 14.5px; flex: 1 1 100%; padding-left: 4px; margin: -2px 0; }
+  .field { position: relative; flex: 1 1 100%; min-width: 0; }
+  .field.half { flex: 1 1 100px; }
+  .field input {
+    width: 100%; font: inherit; font-size: 20px; font-weight: 700; color: var(--ink);
+    background: var(--field); border: 2px solid var(--line); border-radius: 14px;
+    padding: 11px 34px 11px 12px; outline: none; transition: border-color .15s;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .field.pct input { padding-right: 34px; }
+  .field .unit {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-weight: 800; pointer-events: none;
+  }
+
+  .seg { display: inline-flex; background: var(--field); border: 2px solid var(--line); border-radius: 14px; padding: 3px; }
+  .seg button {
+    border: 0; background: transparent; font: inherit; font-weight: 700; font-size: 15px; color: var(--muted);
+    padding: 8px 14px; border-radius: 10px; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+
+  .result {
+    margin-top: 12px; background: var(--soft); border-radius: 16px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px; min-height: 64px;
+  }
+  .result .txt { flex: 1; min-width: 0; }
+  .result .big { font-size: 26px; font-weight: 800; word-break: break-word; line-height: 1.2; }
+  .result .big.up { color: var(--up); }
+  .result .big.down { color: var(--down); }
+  .result .how { font-size: 13.5px; color: var(--muted); margin-top: 3px; word-break: break-word; }
+  .result .empty { color: var(--muted); font-size: 14.5px; }
+  .icon-btn {
+    flex: none; border: 0; background: var(--card); color: var(--ink); border-radius: 12px;
+    width: 42px; height: 42px; display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow);
+  }
+  .icon-btn svg { width: 20px; height: 20px; }
+  .icon-btn[hidden] { display: none; }
+  .actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+  .clear { border: 0; background: none; color: var(--muted); font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; padding: 4px 6px; }
+
+  .c1 { --accent: var(--pink); --soft: var(--pink-soft); }
+  .c2 { --accent: var(--lilac); --soft: var(--lilac-soft); }
+  .c3 { --accent: var(--mint); --soft: var(--mint-soft); }
+  .c4 { --accent: var(--peach); --soft: var(--peach-soft); }
+  .c5 { --accent: var(--sky); --soft: var(--sky-soft); }
+
+  .tip { background: var(--card); border-radius: 22px; padding: 14px 16px; box-shadow: var(--shadow); font-size: 14px; color: var(--muted); }
+  .tip b { color: var(--ink); }
+  .tip p { margin: 6px 0; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translate(-50%, 30px);
+    background: var(--ink); color: var(--card); padding: 10px 18px; border-radius: 999px; font-weight: 700;
+    font-size: 14px; opacity: 0; transition: .25s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <svg viewBox="0 0 120 120" aria-hidden="true">
+      <!-- bé mèo -->
+      <path d="M22 62 L26 18 L54 40 Z" fill="#fff4e3" stroke="#f2c79a" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M29 50 L31 29 L45 41 Z" fill="#ffc7da"/>
+      <path d="M98 62 L94 18 L66 40 Z" fill="#fff4e3" stroke="#f2c79a" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M91 50 L89 29 L75 41 Z" fill="#ffc7da"/>
+      <ellipse cx="60" cy="72" rx="44" ry="36" fill="#fff4e3" stroke="#f2c79a" stroke-width="3"/>
+      <path d="M52 38 q2 8 0 14 M60 36 v16 M68 38 q-2 8 0 14" fill="none" stroke="#f6c28f" stroke-width="3" stroke-linecap="round"/>
+      <path d="M38 70 q6 -7 12 0" fill="none" stroke="#4a3b52" stroke-width="3.2" stroke-linecap="round"/>
+      <path d="M70 70 q6 -7 12 0" fill="none" stroke="#4a3b52" stroke-width="3.2" stroke-linecap="round"/>
+      <ellipse cx="34" cy="82" rx="7" ry="4.5" fill="#ffb3cc"/>
+      <ellipse cx="86" cy="82" rx="7" ry="4.5" fill="#ffb3cc"/>
+      <path d="M57 77 l3 3 l3 -3 z" fill="#ff8fb8"/>
+      <path d="M54 82 q3 4 6 0 q3 4 6 0" fill="none" stroke="#4a3b52" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M10 76 h16 M12 86 l14 -4 M110 76 h-16 M108 86 l-14 -4" stroke="#c9a98a" stroke-width="2.2" stroke-linecap="round"/>
+      <circle cx="94" cy="96" r="17" fill="#3d8bfd" stroke="#fff" stroke-width="3"/>
+      <text x="94" y="103" text-anchor="middle" font-size="20" font-weight="800" fill="#fff" font-family="Arial, sans-serif">%</text>
+    </svg>
+    <div>
+      <h1>Tính Phần Trăm</h1>
+      <p class="sub">Gõ số vào là ra kết quả liền ✨</p>
+    </div>
+  </header>
+
+  <nav class="chips" aria-label="Chọn kiểu tính">
+    <button class="chip" data-go="k1">% của số</button>
+    <button class="chip" data-go="k2">A là bao nhiêu % B</button>
+    <button class="chip" data-go="k3">Tăng/giảm bao nhiêu %</button>
+    <button class="chip" data-go="k4">Cộng/trừ %</button>
+    <button class="chip" data-go="k5">Tìm số gốc</button>
+  </nav>
+
+  <!-- 1 -->
+  <section class="card c1" id="k1">
+    <h2><span class="no">1</span>Tính phần trăm của một số</h2>
+    <p class="hint">Ví dụ: 20% của 80.000 là bao nhiêu?</p>
+    <div class="row">
+      <div class="field pct"><input data-k="1" data-i="a" inputmode="decimal" placeholder="20" aria-label="Phần trăm"><span class="unit">%</span></div>
+      <span class="w">của</span>
+      <div class="field"><input data-k="1" data-i="b" inputmode="decimal" placeholder="80.000" aria-label="Số"></div>
+    </div>
+    <div class="result" data-r="1"></div>
+    <div class="actions"><button class="clear" data-clear="1">Xóa số</button></div>
+  </section>
+
+  <!-- 2 -->
+  <section class="card c2" id="k2">
+    <h2><span class="no">2</span>Số A bằng bao nhiêu % số B</h2>
+    <p class="hint">Ví dụ: 20 là bao nhiêu phần trăm của 80?</p>
+    <div class="row">
+      <div class="field"><input data-k="2" data-i="a" inputmode="decimal" placeholder="Số A" aria-label="Số A"></div>
+      <span class="w">là bao nhiêu % của</span>
+      <div class="field"><input data-k="2" data-i="b" inputmode="decimal" placeholder="Số B" aria-label="Số B"></div>
+    </div>
+    <div class="result" data-r="2"></div>
+    <div class="actions"><button class="clear" data-clear="2">Xóa số</button></div>
+  </section>
+
+  <!-- 3 -->
+  <section class="card c3" id="k3">
+    <h2><span class="no">3</span>Tăng hay giảm bao nhiêu %</h2>
+    <p class="hint">Ví dụ: giá cũ 40.000, giá mới 42.400 thì tăng mấy %?</p>
+    <div class="row">
+      <span class="w">Từ</span>
+      <div class="field"><input data-k="3" data-i="a" inputmode="decimal" placeholder="Số cũ" aria-label="Số ban đầu"></div>
+      <span class="w">thành</span>
+      <div class="field"><input data-k="3" data-i="b" inputmode="decimal" placeholder="Số mới" aria-label="Số mới"></div>
+    </div>
+    <div class="result" data-r="3"></div>
+    <div class="actions"><button class="clear" data-clear="3">Xóa số</button></div>
+  </section>
+
+  <!-- 4 -->
+  <section class="card c4" id="k4">
+    <h2><span class="no">4</span>Cộng thêm hoặc bớt đi một số %</h2>
+    <p class="hint">Ví dụ: 80.000 tăng thêm 10% thì thành bao nhiêu?</p>
+    <div class="row">
+      <div class="field"><input data-k="4" data-i="b" inputmode="decimal" placeholder="80.000" aria-label="Số"></div>
+      <div class="seg" role="group" aria-label="Tăng hay giảm">
+        <button data-dir="up" aria-pressed="true">Tăng</button>
+        <button data-dir="down" aria-pressed="false">Giảm</button>
+      </div>
+      <div class="field pct half"><input data-k="4" data-i="a" inputmode="decimal" placeholder="10" aria-label="Phần trăm"><span class="unit">%</span></div>
+    </div>
+    <div class="result" data-r="4"></div>
+    <div class="actions"><button class="clear" data-clear="4">Xóa số</button></div>
+  </section>
+
+  <!-- 5 -->
+  <section class="card c5" id="k5">
+    <h2><span class="no">5</span>Tìm số gốc</h2>
+    <p class="hint">Ví dụ: 10 là 5% của số nào?</p>
+    <div class="row">
+      <div class="field"><input data-k="5" data-i="a" inputmode="decimal" placeholder="10" aria-label="Số đã biết"></div>
+      <span class="w">là</span>
+      <div class="field pct"><input data-k="5" data-i="b" inputmode="decimal" placeholder="5" aria-label="Phần trăm"><span class="unit">%</span></div>
+      <span class="w">của số nào?</span>
+    </div>
+    <div class="result" data-r="5"></div>
+    <div class="actions"><button class="clear" data-clear="5">Xóa số</button></div>
+  </section>
+
+  <div class="tip">
+    <p><b>Mẹo nhỏ:</b> dấu chấm ngăn hàng nghìn sẽ tự hiện khi gõ (80.000). Muốn gõ số lẻ thì dùng dấu phẩy, ví dụ 2,5.</p>
+    <p>Bấm nút <b>chép</b> cạnh kết quả để dán số sang Zalo, Excel hay chỗ khác.</p>
+  </div>
+</div>
+
+<div class="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ----- đọc & định dạng số kiểu Việt Nam (1.234.567,89) -----
+  function parseVN(str) {
+    if (!str) return NaN;
+    var s = String(str).trim().replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+    if (s === "" || s === "-" || s === ".") return NaN;
+    return Number(s);
+  }
+  function fmt(n) {
+    if (!isFinite(n)) return "—";
+    var abs = Math.abs(n);
+    var digits = abs !== 0 && abs < 0.01 ? 6 : 2;
+    var r = Number(n.toFixed(digits));
+    if (Object.is(r, -0)) r = 0;
+    return r.toLocaleString("vi-VN", { maximumFractionDigits: digits });
+  }
+
+  // Tự chèn dấu chấm hàng nghìn khi gõ, giữ vị trí con trỏ
+  function liveFormat(input) {
+    var raw = input.value;
+    var caret = input.selectionStart == null ? raw.length : input.selectionStart;
+    // Bàn phím có thể cho dấu "." làm dấu lẻ: nếu vừa gõ "." ở cuối thì đổi thành ","
+    if (raw.length && raw.charAt(caret - 1) === "." && caret === raw.length && raw.indexOf(",") === -1) {
+      var before = raw.slice(0, caret - 1).replace(/\./g, "");
+      if (/^-?\d+$/.test(before)) raw = raw.slice(0, caret - 1) + ",";
+    }
+    // đếm số "ký tự có nghĩa" trước con trỏ
+    var sig = raw.slice(0, caret).replace(/[^\d,\-]/g, "").length;
+    var neg = raw.trim().charAt(0) === "-";
+    var clean = raw.replace(/[^\d,]/g, "");
+    var firstComma = clean.indexOf(",");
+    var intPart = firstComma === -1 ? clean : clean.slice(0, firstComma);
+    var decPart = firstComma === -1 ? null : clean.slice(firstComma + 1).replace(/,/g, "");
+    intPart = intPart.replace(/^0+(?=\d)/, "");
+    var grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    var out = (neg ? "-" : "") + grouped + (decPart !== null ? "," + decPart : "");
+    if (out === input.value) return;
+    input.value = out;
+    // đặt lại con trỏ
+    var pos = 0, count = 0;
+    while (pos < out.length && count < sig) {
+      if (/[\d,\-]/.test(out.charAt(pos))) count++;
+      pos++;
+    }
+    try { input.setSelectionRange(pos, pos); } catch (e) {}
+  }
+
+  // ----- các phép tính -----
+  var dir4 = "up";
+  var calc = {
+    1: function (a, b) {
+      var r = a * b / 100;
+      return { val: r, big: fmt(r), how: fmt(a) + " × " + fmt(b) + " ÷ 100 = " + fmt(r) };
+    },
+    2: function (a, b) {
+      if (b === 0) return { err: "Số B phải khác 0 mới tính được." };
+      var r = a / b * 100;
+      return { val: r, big: fmt(r) + "%", how: fmt(a) + " ÷ " + fmt(b) + " × 100 = " + fmt(r) + "%" };
+    },
+    3: function (a, b) {
+      if (a === 0) return { err: "Số cũ bằng 0 nên không tính được phần trăm thay đổi." };
+      var diff = b - a;
+      var r = diff / Math.abs(a) * 100;
+      var how = "(" + fmt(b) + " − " + fmt(a) + ") ÷ " + fmt(Math.abs(a)) + " × 100 = " + fmt(r) + "%";
+      if (fmt(r) === "0") return { val: 0, big: "Không đổi", how: how };
+      var up = r > 0;
+      return {
+        val: Math.abs(r), cls: up ? "up" : "down",
+        big: (up ? "Tăng " : "Giảm ") + fmt(Math.abs(r)) + "%",
+        how: how + " · chênh " + (up ? "+" : "−") + fmt(Math.abs(diff))
+      };
+    },
+    4: function (a, b) {
+      var part = b * a / 100;
+      var r = dir4 === "up" ? b + part : b - part;
+      var sign = dir4 === "up" ? " + " : " − ";
+      return {
+        val: r, big: fmt(r),
+        how: fmt(b) + sign + fmt(b) + " × " + fmt(a) + "% = " + fmt(b) + sign + fmt(part) + " = " + fmt(r)
+      };
+    },
+    5: function (a, b) {
+      if (b === 0) return { err: "Phần trăm phải khác 0 mới tính được." };
+      var r = a * 100 / b;
+      return { val: r, big: fmt(r), how: fmt(a) + " × 100 ÷ " + fmt(b) + " = " + fmt(r) };
+    }
+  };
+
+  var copyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="3"/><path d="M5 15V6a3 3 0 0 1 3-3h9"/></svg>';
+
+  function val(k, i) {
+    var el = document.querySelector('input[data-k="' + k + '"][data-i="' + i + '"]');
+    return parseVN(el.value);
+  }
+
+  function render(k) {
+    var box = document.querySelector('[data-r="' + k + '"]');
+    var a = val(k, "a"), b = val(k, "b");
+    if (isNaN(a) || isNaN(b)) {
+      box.innerHTML = '<div class="txt"><div class="empty">Nhập đủ hai ô để xem kết quả 🐱</div></div>';
+      return;
+    }
+    var res = calc[k](a, b);
+    if (res.err) {
+      box.innerHTML = '<div class="txt"><div class="empty">' + res.err + '</div></div>';
+      return;
+    }
+    box.innerHTML =
+      '<div class="txt"><div class="big ' + (res.cls || "") + '"></div><div class="how"></div></div>' +
+      '<button class="icon-btn" aria-label="Chép kết quả">' + copyIcon + '</button>';
+    box.querySelector(".big").textContent = res.big;
+    box.querySelector(".how").textContent = res.how;
+    var copyText = fmt(res.val);
+    box.querySelector(".icon-btn").addEventListener("click", function () { copy(copyText); });
+  }
+
+  // ----- chép kết quả -----
+  var toastEl = document.querySelector(".toast"), toastTimer;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 1500);
+  }
+  function copy(text) {
+    function fallback() {
+      var t = document.createElement("textarea");
+      t.value = text; t.setAttribute("readonly", ""); t.style.position = "fixed"; t.style.opacity = "0";
+      document.body.appendChild(t); t.select(); t.setSelectionRange(0, text.length);
+      try { document.execCommand("copy"); toast("Đã chép " + text); } catch (e) { toast("Chưa chép được"); }
+      document.body.removeChild(t);
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { toast("Đã chép " + text); }, fallback);
+    } else fallback();
+  }
+
+  // ----- gắn sự kiện -----
+  document.querySelectorAll("input[data-k]").forEach(function (inp) {
+    inp.setAttribute("autocomplete", "off");
+    inp.addEventListener("input", function () { liveFormat(inp); render(inp.dataset.k); });
+  });
+  document.querySelectorAll("[data-clear]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var k = btn.dataset.clear;
+      document.querySelectorAll('input[data-k="' + k + '"]').forEach(function (i) { i.value = ""; });
+      render(k);
+    });
+  });
+  document.querySelectorAll("[data-dir]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      dir4 = btn.dataset.dir;
+      document.querySelectorAll("[data-dir]").forEach(function (b) { b.setAttribute("aria-pressed", String(b === btn)); });
+      render(4);
+    });
+  });
+  document.querySelectorAll("[data-go]").forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      var card = document.getElementById(chip.dataset.go);
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
+      var first = card.querySelector("input");
+      setTimeout(function () { first.focus({ preventScroll: true }); }, 350);
+    });
+  });
+  [1, 2, 3, 4, 5].forEach(render);
+
+  // ----- cho phép dùng khi không có mạng -----
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  }
+})();
+</script>
+</body>
+</html>
